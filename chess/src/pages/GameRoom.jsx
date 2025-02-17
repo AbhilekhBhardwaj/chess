@@ -1,16 +1,13 @@
+import { useParams } from "react-router-dom";
 import ChessBoard from "../components/ChessBoard";
-import MoveHistory from "../components/MoveHistory";
-import ChatBox from "../components/ChatBox";
 
 const GameRoom = () => {
+  const { gameId } = useParams();
+
   return (
     <div className="flex flex-col items-center justify-center h-screen bg-gray-900 text-white">
-      <h1 className="text-2xl mb-4">Chess Game</h1>
-      <div className="flex gap-4">
-        <ChessBoard />
-        <MoveHistory />
-        <ChatBox />
-      </div>
+      <h1 className="text-2xl font-bold mb-4">Game ID: {gameId}</h1>
+      <ChessBoard gameId={gameId} />
     </div>
   );
 };

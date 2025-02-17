@@ -1,39 +1,46 @@
 import { useEffect, useState } from "react";
 import { Chess } from "chess.js";
+import { Chessboard } from "react-chessboard";
 import socket from "../utils/socket";
 
-const ChessBoard = () => {
+const ChessBoard = ({ gameId }) => {
   const [game, setGame] = useState(new Chess());
-  const [fen, setFen] = useState(game.fen());
 
   useEffect(() => {
-    socket.on("move", (move) => {
-      const newGame = new Chess(game.fen());
-      newGame.move(move);
+    socket.emit("joinGame", gameId);
+
+    socket.on("gameState", (gameState) => {
+      const newGame = new Chess();
+      gameState.moves.forEach((move) => newGame.move(move));
       setGame(newGame);
-      setFen(newGame.fen());
     });
 
-    return () => socket.off("move");
-  }, [game]);
+    return () => socket.off("gameState");
+  }, [gameId]);
 
-  const makeMove = (from, to) => {
-    const move = game.move({ from, to });
-    if (move) {
-      socket.emit("move", move);
-      setFen(game.fen());
+  const makeMove = (move) => {
+    try {
+      const newGame = new Chess(game.fen());
+      const moveResult = newGame.move(move);
+      if (moveResult) {
+        setGame(newGame);
+        socket.emit("move", { gameId, move });
+      }
+    } catch (error) {
+      console.log("Invalid move:", error);
     }
   };
 
   return (
-    <div className="grid grid-cols-8 gap-1 border p-4 w-fit">
-      {game.board().flat().map((square, index) => (
-        <div key={index} className="w-12 h-12 flex items-center justify-center
-          bg-gray-300 text-xl font-bold cursor-pointer"
-          onClick={() => console.log(square?.square)}>
-          {square ? square.type.toUpperCase() : ""}
-        </div>
-      ))}
+    <div className="flex flex-col items-center">
+      <Chessboard
+        position={game.fen()}
+        onPieceDrop={(source, target) => {
+          makeMove({ from: source, to: target, promotion: "q" });
+        }}
+        boardWidth={500}
+        arePiecesDraggable={true}
+      />
     </div>
   );
 };
